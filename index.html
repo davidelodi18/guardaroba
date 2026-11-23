@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2a44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Guardaroba</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --navy:#1f2a44; --navy2:#2f3d60; --bg:#f5f3ee; --card:#ffffff; --text:#1d1d1f; --muted:#6e6e73;
+    --line:#e6e2d8; --gold:#b8913a; --ok:#2e8b57; --warn:#d98a1c; --bad:#c0392b; --blue:#3b7dd8;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px}
+  button{font-family:inherit;font-size:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit;font-size:16px}
+  .app{max-width:640px;margin:0 auto;min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  header.top{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;
+    padding:calc(12px + env(safe-area-inset-top)) 18px 12px;display:flex;align-items:center;justify-content:space-between}
+  header.top h1{margin:0;font-size:20px;letter-spacing:.3px;font-weight:700}
+  header.top .sub{font-size:12px;opacity:.75;margin-top:2px}
+  main{padding:14px}
+  .card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid var(--line)}
+  .card h2{margin:0 0 10px;font-size:16px}
+  .card h3{margin:0 0 8px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .muted{color:var(--muted)} .small{font-size:13px}
+  .row{display:flex;align-items:center;gap:10px}
+  .between{justify-content:space-between}
+  .wrap{flex-wrap:wrap}
+  .grow{flex:1;min-width:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:14px;color:var(--text)}
+  .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .btn{border:none;border-radius:12px;padding:12px 16px;font-weight:600;background:var(--navy);color:#fff}
+  .btn.full{width:100%}
+  .btn.sec{background:#ece8de;color:var(--navy)}
+  .btn.ghost{background:transparent;color:var(--navy);border:1px solid var(--line)}
+  .btn.danger{background:#fbe9e7;color:var(--bad)}
+  .btn.ok{background:var(--ok)}
+  .btn.sm{padding:8px 12px;font-size:13px;border-radius:10px}
+  .btn:disabled{opacity:.5}
+  .icon-btn{border:none;background:transparent;font-size:18px;padding:6px 8px;border-radius:10px;color:inherit}
+  label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px;font-weight:600}
+  .inp{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text)}
+  textarea.inp{min-height:70px;resize:vertical}
+  .thumb{border-radius:12px;object-fit:cover;flex-shrink:0;background:#eee;display:block}
+  .swatch{display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,.08)}
+  .swatch span{font-size:22px;filter:drop-shadow(0 1px 1px rgba(255,255,255,.6))}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .tile{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left;padding:0;color:var(--text)}
+  .tile .ph{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+  .tile .ph.swatch{font-size:40px}
+  .tile .info{padding:8px 10px}
+  .tile .nm{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tile .meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:3px}
+  .tile.off{opacity:.55}
+  nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--line);
+    display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
+  nav.tabs .in{display:flex;width:100%;max-width:640px}
+  nav.tabs button{flex:1;border:none;background:none;padding:9px 2px 8px;color:var(--muted);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
+  nav.tabs button .ic{font-size:21px;line-height:1}
+  nav.tabs button.on{color:var(--navy);font-weight:700}
+  .badge{position:absolute;top:4px;left:calc(50% + 6px);background:var(--warn);color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;font-weight:700}
+  .fab{position:fixed;right:max(18px, calc(50% - 302px));bottom:calc(84px + env(safe-area-inset-bottom));z-index:25;width:56px;height:56px;border-radius:50%;border:none;background:var(--gold);color:#fff;font-size:30px;box-shadow:0 6px 16px rgba(0,0,0,.2)}
+  .overlay{position:fixed;inset:0;background:rgba(15,20,35,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+  .sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;animation:up .2s ease}
+  @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px}
+  .sheet-head h3{margin:0;font-size:17px}
+  .sheet-body{overflow-y:auto;padding:0 16px 16px;-webkit-overflow-scrolling:touch}
+  .sheet-foot{padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:8px;background:var(--bg)}
+  .sheet-foot .btn{flex:1}
+  .colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+  .colbtn{border:2px solid transparent;background:#fff;border-radius:12px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--text)}
+  .colbtn .sw{width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.12)}
+  .colbtn.on{border-color:var(--navy)}
+  .photo-box{display:flex;gap:12px;align-items:center}
+  .photo-box .big{width:110px;height:110px;border-radius:16px;object-fit:cover;background:#e9e5db;display:flex;align-items:center;justify-content:center;font-size:40px;flex-shrink:0;border:1px solid var(--line)}
+  .outfit{background:#fff;border-radius:var(--radius);border:1px solid var(--line);margin-bottom:14px;overflow:hidden}
+  .outfit .oh{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .outfit .oh b{font-size:15px}
+  .match{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;background:#eef4ea;color:var(--ok)}
+  .piece{display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid #f1eee7}
+  .piece:last-of-type{border-bottom:none}
+  .piece .pn{font-weight:600;font-size:14px}
+  .piece .pc{font-size:12px;color:var(--muted)}
+  .lock{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 8px;font-size:15px}
+  .lock.on{background:var(--navy);border-color:var(--navy)}
+  .why{padding:10px 14px;background:#faf8f3;font-size:13px;border-top:1px solid var(--line)}
+  .why div{margin:2px 0}
+  .pro{color:#2d6a3e} .con{color:#9a5a12}
+  .outfit .acts{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+  .outfit .acts .btn{flex:1}
+  .strip{display:flex;gap:6px;overflow-x:auto;padding:2px 0}
+  .list-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1eee7}
+  .list-item:last-child{border-bottom:none}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));background:var(--navy);color:#fff;padding:12px 16px;border-radius:14px;z-index:80;max-width:90%;font-size:14px;box-shadow:0 8px 20px rgba(0,0,0,.25);text-align:center}
+  .empty{text-align:center;padding:30px 16px;color:var(--muted)}
+  .empty .e{font-size:44px;margin-bottom:8px}
+  .banner{background:#fff6e0;border:1px solid #f0dca8;color:#7a5a12;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+  .login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;background:var(--navy);color:#fff}
+  .login h1{font-size:30px;margin:10px 0 6px}
+  .login .btn{background:#fff;color:var(--navy);margin-top:24px;padding:14px 22px}
+  .seg{display:flex;background:#ece8de;border-radius:12px;padding:3px;gap:3px}
+  .seg button{flex:1;border:none;background:transparent;padding:8px 4px;border-radius:10px;font-size:13px;color:var(--navy)}
+  .seg button.on{background:#fff;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .range-row{display:flex;align-items:center;gap:10px}
+  .range-row input{flex:1}
+  .stat{display:flex;align-items:center;gap:10px;padding:6px 0}
+  .bar{height:6px;background:var(--navy);border-radius:3px}
+  pre.code{background:#1d2333;color:#dfe6f3;padding:10px;border-radius:10px;font-size:11.5px;overflow-x:auto;white-space:pre}
+  .search{position:relative;margin-bottom:10px}
+  .search input{padding-left:34px}
+  .search span{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* =========================================================
+   CONFIGURAZIONE FIREBASE
+   Incolla qui la config del tuo progetto Firebase
+   (Console Firebase > Impostazioni progetto > Le tue app > Config).
+   Se lasci apiKey vuota l'app funziona in modalità locale
+   (dati salvati solo su questo dispositivo).
+   ========================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC52SelbA4jJmCbn_7hBoNhVcnvHNOcAFk",
+  authDomain: "guardaroba-a0456.firebaseapp.com",
+  projectId: "guardaroba-a0456",
+  storageBucket: "guardaroba-a0456.firebasestorage.app",
+  messagingSenderId: "1044378034283",
+  appId: "1:1044378034283:web:3c2057121c0c8615d8912e"
+};
+
+const FB_ENABLED = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
+let auth = null, db = null;
+if (FB_ENABLED) {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+}
+
+/* ========================= DATI BASE ========================= */
+const ALL_SEASONS = ['inverno', 'mezza', 'estate'];
+
+const CATEGORIES = [
+  { id: 'tshirt',    label: 'T-shirt',             slot: 'base',   wears: 1,  f: 2, icon: '👕' },
+  { id: 'polo',      label: 'Polo',                slot: 'base',   wears: 1,  f: 3, icon: '👕' },
+  { id: 'camicia',   label: 'Camicia',             slot: 'base',   wears: 1,  f: 3, icon: '👔' },
+  { id: 'maglione',  label: 'Maglione',            slot: 'mid',    wears: 5,  f: 3, icon: '🧶', seasons: ['inverno', 'mezza'] },
+  { id: 'felpa',     label: 'Felpa',               slot: 'mid',    wears: 4,  f: 2, icon: '🧥', seasons: ['inverno', 'mezza'] },
+  { id: 'cardigan',  label: 'Cardigan',            slot: 'mid',    wears: 5,  f: 3, icon: '🧶', seasons: ['inverno', 'mezza'] },
+  { id: 'giacca',    label: 'Giacca / blazer',     slot: 'outer',  wears: 0,  f: 4, icon: '🧥', seasons: ['inverno', 'mezza'] },
+  { id: 'giubbotto', label: 'Giubbotto / cappotto',slot: 'outer',  wears: 0,  f: 3, icon: '🧥', seasons: ['inverno'] },
+  { id: 'jeans',     label: 'Jeans',               slot: 'bottom', wears: 5,  f: 2, icon: '👖' },
+  { id: 'pantaloni', label: 'Pantaloni',           slot: 'bottom', wears: 3,  f: 3, icon: '👖' },
+  { id: 'bermuda',   label: 'Bermuda',             slot: 'bottom', wears: 3,  f: 2, icon: '🩳', seasons: ['estate'] },
+  { id: 'scarpe',    label: 'Scarpe',              slot: 'shoes',  wears: 0,  f: 2, icon: '👟' },
+  { id: 'cintura',   label: 'Cintura',             slot: 'belt',   wears: 0,  f: 3, icon: '➰' },
+];
+const CAT = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
+const catOf = (i) => (i && CAT[i.category]) || CAT.tshirt;
+
+const SLOT_ORDER = ['outer', 'mid', 'base', 'bottom', 'belt', 'shoes'];
+const SLOT_LABEL = { outer: 'Capospalla', mid: 'Maglioni e felpe', base: 'Camicie e maglie', bottom: 'Pantaloni', belt: 'Cinture', shoes: 'Scarpe' };
+
+const COLORS = [
+  { id: 'bianco',          label: 'Bianco',          hex: '#f7f7f5', g: 'neutro' },
+  { id: 'panna',           label: 'Panna',           hex: '#f1ead8', g: 'neutro' },
+  { id: 'beige',           label: 'Beige',           hex: '#d9c7a7', g: 'neutro' },
+  { id: 'grigio-chiaro',   label: 'Grigio chiaro',   hex: '#c8c9cc', g: 'neutro' },
+  { id: 'grigio',          label: 'Grigio',          hex: '#8d9096', g: 'neutro' },
+  { id: 'antracite',       label: 'Antracite',       hex: '#45484e', g: 'neutro' },
+  { id: 'nero',            label: 'Nero',            hex: '#1c1c1e', g: 'nero' },
+  { id: 'azzurro',         label: 'Azzurro',         hex: '#a9c6e8', g: 'blu' },
+  { id: 'blu',             label: 'Blu',             hex: '#2f5596', g: 'blu' },
+  { id: 'navy',            label: 'Blu navy',        hex: '#1f2a44', g: 'blu' },
+  { id: 'denim-chiaro',    label: 'Denim chiaro',    hex: '#8fa9c9', g: 'denim' },
+  { id: 'denim-scuro',     label: 'Denim scuro',     hex: '#2e3d5c', g: 'denim' },
+  { id: 'cammello',        label: 'Cammello',        hex: '#b98b5a', g: 'terra' },
+  { id: 'marrone',         label: 'Marrone',         hex: '#6b4429', g: 'terra' },
+  { id: 'oliva',           label: 'Verde oliva',     hex: '#6b6b3a', g: 'terra' },
+  { id: 'verde-bottiglia', label: 'Verde bottiglia', hex: '#1f4a35', g: 'terra' },
+  { id: 'bordeaux',        label: 'Bordeaux',        hex: '#6d1f2c', g: 'terra' },
+  { id: 'ruggine',         label: 'Ruggine',         hex: '#a0522d', g: 'terra' },
+  { id: 'senape',          label: 'Senape',          hex: '#c9a227', g: 'terra' },
+  { id: 'rosso',           label: 'Rosso',           hex: '#c62f2f', g: 'accento' },
+  { id: 'rosa',            label: 'Rosa',            hex: '#e8a7b5', g: 'accento' },
+  { id: 'verde',           label: 'Verde',           hex: '#3c9a5f', g: 'accento' },
+  { id: 'giallo',          label: 'Giallo',          hex: '#f0d04a', g: 'accento' },
+  { id: 'arancione',       label: 'Arancione',       hex: '#e8812f', g: 'accento' },
+  { id: 'viola',           label: 'Viola',           hex: '#6f4a8e', g: 'accento' },
+];
+const COL = Object.fromEntries(COLORS.map(c => [c.id, c]));
+const colName = (c) => (COL[c] ? COL[c].label : '?');
+
+// punteggio tra gruppi di colore (chiavi in ordine alfabetico)
+const GROUP_SCORE = {
+  'accento|accento': -3, 'accento|blu': 0, 'accento|denim': 1, 'accento|neutro': 1, 'accento|nero': 0, 'accento|terra': -1,
+  'blu|blu': 1, 'blu|denim': 1, 'blu|neutro': 3, 'blu|nero': -2, 'blu|terra': 2,
+  'denim|denim': -1, 'denim|neutro': 2, 'denim|nero': 1, 'denim|terra': 2,
+  'neutro|neutro': 1, 'nero|neutro': 1, 'neutro|terra': 2,
+  'nero|nero': 0, 'nero|terra': -1,
+  'terra|terra': 0,
+};
+// eccezioni tra colori specifici
+const PAIR_OVERRIDES = {
+  'azzurro|navy': 3, 'denim-chiaro|navy': 2, 'azzurro|denim-chiaro': 0, 'denim-scuro|navy': -1,
+  'cammello|navy': 3, 'bordeaux|navy': 3, 'marrone|nero': -2, 'bianco|nero': 2, 'antracite|nero': 0,
+  'azzurro|grigio': 3, 'oliva|panna': 3, 'beige|navy': 3, 'navy|panna': 3, 'bianco|navy': 3,
+};
+function pairScore(c1, c2) {
+  if (!c1 || !c2 || !COL[c1] || !COL[c2]) return 0;
+  const key = [c1, c2].sort().join('|');
+  if (PAIR_OVERRIDES[key] !== undefined) return PAIR_OVERRIDES[key];
+  if (c1 === c2) return COL[c1].g === 'neutro' ? 0 : -2;
+  const g = [COL[c1].g, COL[c2].g].sort().join('|');
+  return GROUP_SCORE[g] !== undefined ? GROUP_SCORE[g] : 0;
+}
+
+const OCCASIONS = {
+  casual:   { label: 'Casual',       f: 2 },
+  smart:    { label: 'Smart casual', f: 3 },
+  lavoro:   { label: 'Lavoro',       f: 3.4 },
+  elegante: { label: 'Elegante',     f: 4.3 },
+};
+const WEATHER = {
+  caldo:  { label: '☀️ Caldo',  seasons: ['estate'],           mid: 'no',  outer: 'no' },
+  mite:   { label: '🌤️ Mite',   seasons: ['mezza', 'estate'],  mid: 'opt', outer: 'no' },
+  fresco: { label: '🍂 Fresco', seasons: ['mezza', 'inverno'], mid: 'yes', outer: 'opt' },
+  freddo: { label: '❄️ Freddo', seasons: ['inverno'],          mid: 'yes', outer: 'yes' },
+};
+const FORMALITY = ['', 'Sportivo', 'Casual', 'Smart casual', 'Elegante', 'Formale'];
+const NECKS = [
+  { id: 'girocollo', label: 'Girocollo' }, { id: 'v', label: 'Scollo a V' }, { id: 'zip', label: 'Mezza zip' },
+  { id: 'alto', label: 'Collo alto / serafino' }, { id: 'cappuccio', label: 'Cappuccio' }, { id: 'aperto', label: 'Aperto (cardigan)' },
+];
+const PATTERNS = [
+  { id: 'unita', label: 'Tinta unita' }, { id: 'micro', label: 'Microfantasia' }, { id: 'righe', label: 'Righe' },
+  { id: 'quadri', label: 'Quadri' }, { id: 'fantasia', label: 'Fantasia / stampa' },
+];
+const SEASONS = [{ id: 'inverno', label: 'Inverno' }, { id: 'mezza', label: 'Mezza stagione' }, { id: 'estate', label: 'Estate' }];
+const STATUS = {
+  disponibile: { label: 'Disponibile',       color: '#2e8b57' },
+  lavare:      { label: 'Da lavare',         color: '#d98a1c' },
+  lavanderia:  { label: 'In lavatrice / lavanderia', color: '#3b7dd8' },
+  nondisp:     { label: 'Non disponibile',   color: '#9a9a9a' },
+};
+const REASONS = ['Prestato', 'Da riparare', 'Da stirare', 'Fuori stagione', 'Altrove (casa, valigia…)'];
+
+const LS_ITEMS = 'gr_items', LS_LOGS = 'gr_logs';
+
+/* ========================= UTILITY ========================= */
+const pad = (n) => String(n).padStart(2, '0');
+const toDateStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const todayStr = () => toDateStr(new Date());
+const parseDate = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const daysBetween = (a, b) => Math.round((parseDate(b) - parseDate(a)) / 86400000);
+const addDays = (s, n) => { const d = parseDate(s); d.setDate(d.getDate() + n); return toDateStr(d); };
+const fmtDate = (s) => parseDate(s).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const clean = (o) => JSON.parse(JSON.stringify(o));
+const loadLS = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const saveLS = (k, v) => {
+  try { localStorage.setItem(k, JSON.stringify(v)); }
+  catch (e) { alert('Spazio locale esaurito: attiva Firebase per salvare tutte le foto.'); }
+};
+const defaultWeather = () => {
+  const m = new Date().getMonth() + 1;
+  if ([11, 12, 1, 2].includes(m)) return 'freddo';
+  if ([3, 10].includes(m)) return 'fresco';
+  if ([4, 5, 9].includes(m)) return 'mite';
+  return 'caldo';
+};
+const defaultItem = (category = 'camicia') => ({
+  id: null, name: '', category, color: '', pattern: 'unita',
+  formality: CAT[category].f, seasons: CAT[category].seasons || ALL_SEASONS,
+  neck: 'girocollo', loops: true, maxWears: CAT[category].wears, wears: 0,
+  status: 'disponibile', reason: '', notes: '', photo: '',
+});
+const itemName = (i) => (i ? (i.name || catOf(i).label) : '');
+
+function processImage(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 520;
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const w = Math.round(img.width * k), h = Math.round(img.height * k);
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const data = c.toDataURL('image/jpeg', 0.72);
+        const sx = Math.round(w * 0.3), sy = Math.round(h * 0.3);
+        const sw = Math.max(1, Math.round(w * 0.4)), sh = Math.max(1, Math.round(h * 0.4));
+        const px = ctx.getImageData(sx, sy, sw, sh).data;
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let i = 0; i < px.length; i += 16) { r += px[i]; g += px[i + 1]; b += px[i + 2]; n++; }
+        resolve({ data, rgb: [r / n, g / n, b / n] });
+      };
+      img.onerror = reject;
+      img.src = fr.result;
+    };
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+function nearestColor(rgb) {
+  let best = COLORS[0].id, bd = Infinity;
+  for (const c of COLORS) {
+    const h = c.hex.replace('#', '');
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    const d = 2 * (r - rgb[0]) ** 2 + 4 * (g - rgb[1]) ** 2 + 3 * (b - rgb[2]) ** 2;
+    if (d < bd) { bd = d; best = c.id; }
+  }
+  return best;
+}
+
+/* ========================= LOGICA OUTFIT ========================= */
+function wearUpdate(it, delta) {
+  const max = Number(it.maxWears) || 0;
+  if (max <= 0) return null;
+  const w = Math.max(0, (Number(it.wears) || 0) + delta);
+  let status = it.status;
+  if (delta > 0 && w >= max && status === 'disponibile') status = 'lavare';
+  if (delta < 0 && status === 'lavare' && w < max) status = 'disponibile';
+  return { ...it, wears: w, status };
+}
+function computeLastWorn(logs, upTo) {
+  const m = {};
+  for (const l of logs) {
+    if (upTo && l.date > upTo) continue;
+    for (const id of (l.items || [])) if (!m[id] || m[id] < l.date) m[id] = l.date;
+  }
+  return m;
+}
+const coreKey = (ids) => ids.filter(Boolean).slice().sort().join('+');
+
+function layerOk(base, mid) {
+  if (!mid) return true;
+  if (['camicia', 'polo'].includes(base.category) && ['alto', 'cappuccio'].includes(mid.neck)) return false;
+  return true;
+}
+function recency(i, ctx) {
+  const d = ctx.lastWorn[i.id];
+  if (!d) return { pts: 0.8 };
+  const n = daysBetween(d, ctx.today);
+  const nm = itemName(i);
+  if (n <= 0) return { pts: -8, con: `${nm}: già indossato oggi` };
+  if (n === 1) return { pts: -5, con: `${nm}: messo ieri` };
+  if (n === 2) return { pts: -2.5, con: `${nm}: messo 2 giorni fa` };
+  if (n === 3) return { pts: -1 };
+  if (n <= 6) return { pts: 0 };
+  if (n <= 20) return { pts: 0.6 };
+  return { pts: 1.2, pro: `${nm}: non lo metti da ${n} giorni` };
+}
+function beltScore(belt, shoes) {
+  if (!belt || !shoes) return 0;
+  if (belt.color === shoes.color) return 3;
+  const bn = belt.color === 'nero', sn = shoes.color === 'nero';
+  const anyTerra = (COL[belt.color] && COL[belt.color].g === 'terra') || (COL[shoes.color] && COL[shoes.color].g === 'terra');
+  if (bn !== sn && anyTerra) return -3;
+  return 0;
+}
+function bestOf(list, fn) {
+  let best = null;
+  for (const item of list) { const v = fn(item); if (!best || v > best.v) best = { item, v }; }
+  return best;
+}
+function scoreCore(b, m, p, ctx, recent) {
+  let s = 0; const pros = [], cons = [];
+  const parts = [b, m, p].filter(Boolean);
+  let fd = 0;
+  for (const i of parts) fd += Math.abs((Number(i.formality) || 2) - ctx.target);
+  s -= 1.3 * fd;
+  const fs = parts.map(i => Number(i.formality) || 2);
+  if (Math.max(...fs) - Math.min(...fs) >= 3) { s -= 2; cons.push('Capi molto diversi come eleganza'); }
+  if (fd / parts.length <= 0.5) pros.push('Livello giusto per l\'occasione');
+
+  const top = m || b;
+  const addPair = (x, y, wgt) => {
+    const v = pairScore(x.color, y.color); s += v * wgt;
+    if (v >= 3) pros.push(`${colName(x.color)} + ${colName(y.color)}: abbinamento classico`);
+    else if (v <= -2) cons.push(`${colName(x.color)} + ${colName(y.color)}: stonano un po'`);
+  };
+  if (m) addPair(b, m, 1);
+  addPair(top, p, 1.5);
+  if (m) s += pairScore(b.color, p.color) * 0.4;
+
+  if (m && b.category === 'camicia' && ['girocollo', 'v', 'zip'].includes(m.neck)) { s += 1; pros.push('Camicia sotto il maglione: smart casual'); }
+  const pat = parts.filter(i => ['righe', 'quadri', 'fantasia'].includes(i.pattern)).length;
+  if (pat > 1) { s -= 2.5; cons.push('Due fantasie insieme'); }
+
+  const wts = { base: 1, mid: 1, bottom: 0.8 };
+  for (const i of parts) {
+    const r = recency(i, ctx);
+    s += r.pts * (wts[catOf(i).slot] || 1);
+    if (r.pro) pros.push(r.pro);
+    if (r.con) cons.push(r.con);
+  }
+  if (recent.has(coreKey(parts.map(i => i.id)))) { s -= 4; cons.push('Combinazione già messa nelle ultime 2 settimane'); }
+  s += Math.random() * 1.2;
+  return { b, m, p, score: s, pros, cons };
+}
+function completeOutfit(c, pool, locked, w, ctx) {
+  let s = c.score; const pros = [...c.pros], cons = [...c.cons];
+  const top = c.m || c.b;
+  let outer = null;
+  if (locked.outer) outer = locked.outer;
+  else if (w.outer !== 'no' && pool.outer.length) {
+    const best = bestOf(pool.outer, o => pairScore(o.color, top.color) + 0.5 * pairScore(o.color, c.p.color)
+      - Math.abs((Number(o.formality) || 3) - ctx.target) + 0.3 * recency(o, ctx).pts);
+    if (best && (w.outer === 'yes' || best.v > 0)) outer = best.item;
+  }
+  if (outer) s += pairScore(outer.color, top.color) * 0.6;
+
+  let shoes = null;
+  if (locked.shoes) shoes = locked.shoes;
+  else if (pool.shoes.length) {
+    const best = bestOf(pool.shoes, x => pairScore(x.color, c.p.color) - 1.2 * Math.abs((Number(x.formality) || 2) - ctx.target)
+      + (x.color === 'bianco' && ctx.target <= 3 ? 1 : 0) + 0.1 * recency(x, ctx).pts);
+    shoes = best.item; s += best.v * 0.5;
+  }
+  let belt = null;
+  if (locked.belt) belt = locked.belt;
+  else if (c.p.loops !== false && pool.belt.length) {
+    const best = bestOf(pool.belt, x => beltScore(x, shoes) + 0.5 * pairScore(x.color, c.p.color));
+    if (best.v >= 0) belt = best.item;
+  }
+  if (belt && shoes) {
+    const v = beltScore(belt, shoes);
+    if (v >= 3) pros.push('Cintura e scarpe dello stesso colore');
+    if (v <= -3) cons.push('Cintura e scarpe di colore diverso');
+  }
+  return { ...c, outer, shoes, belt, score: s, pros: [...new Set(pros)].slice(0, 4), cons: [...new Set(cons)].slice(0, 3) };
+}
+function generateOutfits({ items, logs, occasion, weather, lockedIds = [], count = 3 }) {
+  const today = todayStr();
+  const byId = Object.fromEntries(items.map(i => [i.id, i]));
+  const lastWorn = computeLastWorn(logs, today);
+  const recent = new Set();
+  for (const l of logs) {
+    const d = daysBetween(l.date, today);
+    if (d >= 0 && d <= 14) {
+      const core = (l.items || []).map(id => byId[id]).filter(i => i && ['base', 'mid', 'bottom'].includes(catOf(i).slot)).map(i => i.id);
+      if (core.length) recent.add(coreKey(core));
+    }
+  }
+  const target = OCCASIONS[occasion].f;
+  const w = WEATHER[weather];
+  const okSeason = (i) => !i.seasons || !i.seasons.length || i.seasons.some(s => w.seasons.includes(s));
+  const pool = { base: [], mid: [], outer: [], bottom: [], shoes: [], belt: [] };
+  for (const i of items) if (i.status === 'disponibile' && okSeason(i)) pool[catOf(i).slot].push(i);
+  if (weather !== 'caldo') pool.bottom = pool.bottom.filter(i => i.category !== 'bermuda');
+
+  const locked = {};
+  for (const id of lockedIds) { const i = byId[id]; if (i) { const s = catOf(i).slot; locked[s] = i; pool[s] = [i]; } }
+
+  const ctx = { target, lastWorn, today };
+  let midOpts;
+  if (locked.mid) midOpts = [locked.mid];
+  else if (w.mid === 'no') midOpts = [null];
+  else if (w.mid === 'opt') midOpts = [null, ...pool.mid];
+  else midOpts = pool.mid.length ? pool.mid : [null];
+
+  const missing = [];
+  if (!pool.base.length) missing.push('una camicia o maglia');
+  if (!pool.bottom.length) missing.push('un pantalone');
+  if (missing.length) return { outfits: [], missing };
+
+  const cores = [];
+  for (const b of pool.base) for (const m of midOpts) for (const p of pool.bottom) {
+    if (m && !layerOk(b, m)) continue;
+    cores.push(scoreCore(b, m, p, ctx, recent));
+  }
+  if (!cores.length) return { outfits: [], missing: ['una combinazione compatibile (es. camicia sotto collo alto non va)'] };
+  cores.sort((a, b) => b.score - a.score);
+  const full = cores.slice(0, 60).map(c => completeOutfit(c, pool, locked, w, ctx));
+  full.sort((a, b) => b.score - a.score);
+
+  const diff = (a, b) => ['b', 'm', 'p'].filter(k => (a[k] && a[k].id) !== (b[k] && b[k].id)).length;
+  const out = [];
+  for (const c of full) { if (out.every(o => diff(o, c) >= 2)) out.push(c); if (out.length >= count) break; }
+  if (out.length < count) for (const c of full) { if (!out.includes(c) && out.every(o => diff(o, c) >= 1)) out.push(c); if (out.length >= count) break; }
+  return { outfits: out, missing: [] };
+}
+const outfitPieces = (o) => [o.outer, o.m, o.b, o.p, o.belt, o.shoes].filter(Boolean);
+const matchPct = (s) => Math.max(15, Math.min(99, Math.round(62 + s * 3)));
+
+/* ========================= STORE ========================= */
+function useStore(user) {
+  const cloud = FB_ENABLED && !!user;
+  const uid = user ? user.uid : null;
+  const [items, setItems] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [ready, setReady] = useState(false);
+  const itemsRef = useRef(items); itemsRef.current = items;
+  const root = () => db.collection('guardaroba').doc(uid);
+  const fail = (e) => { console.error(e); alert('Errore di salvataggio: ' + e.message); };
+
+  useEffect(() => {
+    setReady(false);
+    if (cloud) {
+      let a = false, b = false;
+      const done = () => { if (a && b) setReady(true); };
+      const u1 = root().collection('items').onSnapshot(
+        s => { setItems(s.docs.map(d => ({ ...d.data(), id: d.id }))); a = true; done(); },
+        e => { fail(e); a = true; done(); });
+      const u2 = root().collection('logs').onSnapshot(
+        s => { setLogs(s.docs.map(d => ({ ...d.data(), id: d.id }))); b = true; done(); },
+        e => { fail(e); b = true; done(); });
+      return () => { u1(); u2(); };
+    } else {
+      setItems(loadLS(LS_ITEMS, []));
+      setLogs(loadLS(LS_LOGS, []));
+      setReady(true);
+    }
+  }, [cloud, uid]);
+
+  const writeMany = (coll, list) => {
+    if (!list.length) return;
+    if (cloud) {
+      for (let i = 0; i < list.length; i += 400) {
+        const batch = db.batch();
+        list.slice(i, i + 400).forEach(x => batch.set(root().collection(coll).doc(x.id), clean(x)));
+        batch.commit().catch(fail);
+      }
+    } else {
+      const key = coll === 'items' ? LS_ITEMS : LS_LOGS;
+      const setter = coll === 'items' ? setItems : setLogs;
+      setter(prev => {
+        const m = new Map(prev.map(x => [x.id, x]));
+        list.forEach(x => m.set(x.id, clean(x)));
+        const n = [...m.values()]; saveLS(key, n); return n;
+      });
+    }
+  };
+  const removeOne = (coll, id) => {
+    if (cloud) root().collection(coll).doc(id).delete().catch(fail);
+    else {
+      const key = coll === 'items' ? LS_ITEMS : LS_LOGS;
+      const setter = coll === 'items' ? setItems : setLogs;
+      setter(prev => { const n = prev.filter(x => x.id !== id); saveLS(key, n); return n; });
+    }
+  };
+
+  const saveItem = (it) => {
+    const data = { ...it, id: it.id || newId(), updatedAt: Date.now(), createdAt: it.createdAt || Date.now() };
+    writeMany('items', [data]); return data;
+  };
+  const saveItems = (list) => writeMany('items', list.map(it => ({ ...it, updatedAt: Date.now() })));
+  const deleteItem = (id) => removeOne('items', id);
+
+  const addLog = ({ date, items: ids, occasion }) => {
+    const log = { id: newId(), date, items: ids, occasion: occasion || '', createdAt: Date.now() };
+    const changed = [], moved = [];
+    for (const id of ids) {
+      const it = itemsRef.current.find(x => x.id === id); if (!it) continue;
+      const u = wearUpdate(it, 1);
+      if (u) { changed.push(u); if (u.status === 'lavare' && it.status !== 'lavare') moved.push(u); }
+    }
+    saveItems(changed);
+    writeMany('logs', [log]);
+    return moved;
+  };
+  const deleteLog = (log) => {
+    const changed = [];
+    for (const id of (log.items || [])) {
+      const it = itemsRef.current.find(x => x.id === id); if (!it) continue;
+      const u = wearUpdate(it, -1); if (u) changed.push(u);
+    }
+    saveItems(changed);
+    removeOne('logs', log.id);
+  };
+  const importData = (data) => {
+    if (Array.isArray(data.items)) writeMany('items', data.items.filter(x => x && x.id));
+    if (Array.isArray(data.logs)) writeMany('logs', data.logs.filter(x => x && x.id));
+  };
+  return { items, logs, ready, cloud, saveItem, saveItems, deleteItem, addLog, deleteLog, importData };
+}
+
+/* ========================= UI BASE ========================= */
+function Modal({ title, onClose, children, footer }) {
+  useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; }; }, []);
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={e => e.stopPropagation()}>
+        <div className="sheet-head"><h3>{title}</h3><button className="icon-btn" onClick={onClose}>✕</button></div>
+        <div className="sheet-body">{children}</div>
+        {footer && <div className="sheet-foot">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+function Chips({ options, value, onChange, multi }) {
+  return (
+    <div className="chips">
+      {options.map(o => {
+        const on = multi ? value.includes(o.id) : value === o.id;
+        return (
+          <button key={o.id} type="button" className={'chip' + (on ? ' on' : '')}
+            onClick={() => { if (multi) onChange(on ? value.filter(v => v !== o.id) : [...value, o.id]); else onChange(o.id); }}>
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+function Thumb({ item, size = 52 }) {
+  const c = COL[item.color];
+  if (item.photo) return <img className="thumb" src={item.photo} style={{ width: size, height: size }} alt="" />;
+  return (
+    <div className="thumb swatch" style={{ width: size, height: size, background: c ? c.hex : '#ddd' }}>
+      <span style={{ fontSize: size * 0.42 }}>{catOf(item).icon}</span>
+    </div>
+  );
+}
+function StatusDot({ status }) {
+  const s = STATUS[status] || STATUS.disponibile;
+  return <span className="dot" style={{ background: s.color }} title={s.label}></span>;
+}
+
+/* ========================= EDITOR CAPO ========================= */
+function ItemEditor({ item, onSave, onDelete, onClose }) {
+  const isNew = !item.id;
+  const [f, setF] = useState(item);
+  const [busy, setBusy] = useState(false);
+  const [hint, setHint] = useState(null);
+  const fileRef = useRef();
+  const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+  const cat = CAT[f.category];
+
+  const changeCat = (id) => setF(p => {
+    const c = CAT[id]; const n = { ...p, category: id };
+    if (isNew) { n.maxWears = c.wears; n.formality = c.f; n.seasons = c.seasons || ALL_SEASONS; }
+    return n;
+  });
+  const onFile = async (e) => {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    setBusy(true);
+    try {
+      const r = await processImage(file);
+      const near = nearestColor(r.rgb);
+      setF(p => ({ ...p, photo: r.data, color: p.color || near }));
+      setHint(near);
+    } catch (err) { alert('Impossibile leggere la foto'); }
+    setBusy(false); e.target.value = '';
+  };
+  const save = () => {
+    if (!f.name.trim()) { alert('Dai un nome al capo (es. "Camicia azzurra Oxford")'); return; }
+    if (!f.color) { alert('Scegli il colore principale'); return; }
+    onSave({ ...f, name: f.name.trim(), maxWears: Number(f.maxWears) || 0, wears: Number(f.wears) || 0, formality: Number(f.formality) || 2 });
+  };
+
+  return (
+    <Modal title={isNew ? 'Nuovo capo' : 'Modifica capo'} onClose={onClose}
+      footer={<>
+        {!isNew && <button className="btn danger" onClick={() => { if (confirm('Eliminare questo capo?')) onDelete(f.id); }}>Elimina</button>}
+        <button className="btn" onClick={save} disabled={busy}>Salva</button>
+      </>}>
+      <div className="photo-box">
+        {f.photo ? <img className="big" src={f.photo} alt="" /> :
+          <div className="big" style={{ background: COL[f.color] ? COL[f.color].hex : '#e9e5db' }}>{cat.icon}</div>}
+        <div className="grow">
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onFile} />
+          <button className="btn sec sm" onClick={() => fileRef.current.click()} disabled={busy}>
+            {busy ? 'Elaboro…' : (f.photo ? '📷 Cambia foto' : '📷 Aggiungi foto')}
+          </button>
+          {f.photo && <button className="btn ghost sm" style={{ marginLeft: 6 }} onClick={() => set('photo', '')}>Rimuovi</button>}
+          {hint && (
+            <div className="small muted" style={{ marginTop: 8 }}>
+              Colore rilevato: <b>{colName(hint)}</b>
+              {f.color !== hint && <button className="btn ghost sm" style={{ marginLeft: 6, padding: '4px 8px' }} onClick={() => set('color', hint)}>Usa</button>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <label className="f">Nome</label>
+      <input className="inp" value={f.name} onChange={e => set('name', e.target.value)} placeholder="es. Maglione navy girocollo" />
+
+      <label className="f">Categoria</label>
+      <select className="inp" value={f.category} onChange={e => changeCat(e.target.value)}>
+        {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+      </select>
+
+      <label className="f">Colore principale</label>
+      <div className="colors">
+        {COLORS.map(c => (
+          <button key={c.id} type="button" className={'colbtn' + (f.color === c.id ? ' on' : '')} onClick={() => set('color', c.id)}>
+            <span className="sw" style={{ background: c.hex }}></span>{c.label}
+          </button>
+        ))}
+      </div>
+
+      <label className="f">Trama</label>
+      <Chips options={PATTERNS} value={f.pattern} onChange={v => set('pattern', v)} />
+
+      {cat.slot === 'mid' && <>
+        <label className="f">Collo</label>
+        <Chips options={NECKS} value={f.neck} onChange={v => set('neck', v)} />
+      </>}
+      {cat.slot === 'bottom' && <>
+        <label className="f">Vita</label>
+        <Chips options={[{ id: 'si', label: 'Con passanti (cintura)' }, { id: 'no', label: 'Elastico / coulisse' }]}
+          value={f.loops === false ? 'no' : 'si'} onChange={v => set('loops', v === 'si')} />
+      </>}
+
+      <label className="f">Eleganza: {FORMALITY[f.formality]}</label>
+      <div className="range-row">
+        <span className="small muted">Sport</span>
+        <input type="range" min="1" max="5" step="1" value={f.formality} onChange={e => set('formality', Number(e.target.value))} />
+        <span className="small muted">Formale</span>
+      </div>
+
+      <label className="f">Stagioni</label>
+      <Chips multi options={SEASONS} value={f.seasons || []} onChange={v => set('seasons', v)} />
+
+      <div className="row" style={{ gap: 12 }}>
+        <div className="grow">
+          <label className="f">Usi prima del lavaggio</label>
+          <input className="inp" type="number" min="0" inputMode="numeric" value={f.maxWears} onChange={e => set('maxWears', e.target.value)} />
+        </div>
+        <div className="grow">
+          <label className="f">Usi dall'ultimo lavaggio</label>
+          <input className="inp" type="number" min="0" inputMode="numeric" value={f.wears} onChange={e => set('wears', e.target.value)} />
+        </div>
+      </div>
+      <div className="small muted" style={{ marginTop: 4 }}>0 = non va mai a lavare (scarpe, cinture, cappotti).</div>
+
+      <label className="f">Stato</label>
+      <Chips options={Object.entries(STATUS).map(([id, s]) => ({ id, label: s.label }))} value={f.status} onChange={v => set('status', v)} />
+      {f.status === 'nondisp' && <>
+        <label className="f">Motivo</label>
+        <Chips options={REASONS.map(r => ({ id: r, label: r }))} value={f.reason} onChange={v => set('reason', v)} />
+        <input className="inp" style={{ marginTop: 8 }} value={f.reason} onChange={e => set('reason', e.target.value)} placeholder="Altro motivo…" />
+      </>}
+
+      <label className="f">Note</label>
+      <textarea className="inp" value={f.notes} onChange={e => set('notes', e.target.value)} placeholder="es. slim fit, collo francese…" />
+    </Modal>
+  );
+}
+
+/* ========================= PICKER ========================= */
+function ItemPicker({ items, title, selected, onToggle, onClose, onlyAvailable }) {
+  const [q, setQ] = useState('');
+  const list = items.filter(i => (!onlyAvailable || i.status === 'disponibile') &&
+    (!q || itemName(i).toLowerCase().includes(q.toLowerCase())));
+  return (
+    <Modal title={title} onClose={onClose} footer={<button className="btn" onClick={onClose}>Fatto</button>}>
+      <div className="search"><span>🔍</span><input className="inp" value={q} onChange={e => setQ(e.target.value)} placeholder="Cerca…" /></div>
+      {SLOT_ORDER.map(slot => {
+        const l = list.filter(i => catOf(i).slot === slot);
+        if (!l.length) return null;
+        return (
+          <div key={slot} style={{ marginBottom: 10 }}>
+            <h3 className="small muted" style={{ margin: '10px 0 4px', textTransform: 'uppercase', letterSpacing: '.6px' }}>{SLOT_LABEL[slot]}</h3>
+            {l.map(i => {
+              const on = selected.includes(i.id);
+              return (
+                <div key={i.id} className="list-item" onClick={() => onToggle(i.id)} style={{ cursor: 'pointer' }}>
+                  <Thumb item={i} size={44} />
+                  <div className="grow">
+                    <div style={{ fontWeight: 600 }}>{itemName(i)}</div>
+                    <div className="small muted row" style={{ gap: 6 }}><StatusDot status={i.status} />{STATUS[i.status] ? STATUS[i.status].label : ''}</div>
+                  </div>
+                  <span style={{ fontSize: 22 }}>{on ? '✅' : '⚪️'}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+      {!list.length && <div className="empty">Nessun capo trovato</div>}
+    </Modal>
+  );
+}
+
+/* ========================= OGGI ========================= */
+function TodayView({ store, toast, goWardrobe }) {
+  const { items, logs } = store;
+  const today = todayStr();
+  const [occasion, setOccasion] = useState(() => loadLS('gr_occ', 'smart'));
+  const [weather, setWeather] = useState(defaultWeather);
+  const [locked, setLocked] = useState([]);
+  const [res, setRes] = useState(null);
+  const [picker, setPicker] = useState(false);
+  const byId = useMemo(() => Object.fromEntries(items.map(i => [i.id, i])), [items]);
+
+  useEffect(() => { saveLS('gr_occ', occasion); }, [occasion]);
+  const gen = () => setRes(generateOutfits({ items, logs, occasion, weather, lockedIds: locked }));
+  useEffect(() => { if (res) gen(); }, [locked, occasion, weather]);
+
+  const toggleLock = (id) => {
+    const it = byId[id]; if (!it) return;
+    const slot = catOf(it).slot;
+    setLocked(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev.filter(x => byId[x] && catOf(byId[x]).slot !== slot), id]);
+  };
+  const wear = (o) => {
+    const ids = outfitPieces(o).map(i => i.id);
+    const moved = store.addLog({ date: today, items: ids, occasion });
+    setRes(null); setLocked([]);
+    toast(moved.length ? `Registrato! Ora da lavare: ${moved.map(itemName).join(', ')}` : 'Outfit di oggi registrato 👍');
+  };
+
+  const todayLogs = logs.filter(l => l.date === today);
+  const yLogs = logs.filter(l => l.date === addDays(today, -1));
+  const toWash = items.filter(i => i.status === 'lavare').length;
+
+  if (!items.length) return (
+    <div className="card empty">
+      <div className="e">👔</div>
+      <b>Il tuo armadio è vuoto</b>
+      <p>Aggiungi camicie, maglioni, pantaloni e scarpe: poi qui ti propongo gli outfit.</p>
+      <button className="btn" onClick={goWardrobe}>Vai all'armadio</button>
+    </div>
+  );
+
+  return (
+    <>
+      {todayLogs.map(l => (
+        <div className="card" key={l.id}>
+          <div className="row between"><h2 style={{ margin: 0 }}>✅ Oggi indossi</h2>
+            <button className="btn ghost sm" onClick={() => { if (confirm('Annullare l\'outfit di oggi?')) store.deleteLog(l); }}>Annulla</button></div>
+          <div className="strip" style={{ marginTop: 10 }}>
+            {(l.items || []).map(id => byId[id] && <Thumb key={id} item={byId[id]} size={50} />)}
+          </div>
+          <div className="small muted" style={{ marginTop: 6 }}>{(l.items || []).map(id => itemName(byId[id])).filter(Boolean).join(' · ')}</div>
+        </div>
+      ))}
+
+      <div className="card">
+        <h3>Occasione</h3>
+        <Chips options={Object.entries(OCCASIONS).map(([id, o]) => ({ id, label: o.label }))} value={occasion} onChange={setOccasion} />
+        <h3 style={{ marginTop: 14 }}>Meteo</h3>
+        <div className="seg">
+          {Object.entries(WEATHER).map(([id, w]) => <button key={id} className={weather === id ? 'on' : ''} onClick={() => setWeather(id)}>{w.label}</button>)}
+        </div>
+        <div className="row between" style={{ marginTop: 14 }}>
+          <h3 style={{ margin: 0 }}>Parti da un capo</h3>
+          <button className="btn ghost sm" onClick={() => setPicker(true)}>🔒 Scegli</button>
+        </div>
+        {locked.length > 0 && (
+          <div className="chips" style={{ marginTop: 8 }}>
+            {locked.map(id => byId[id] && <button key={id} className="chip on" onClick={() => toggleLock(id)}>🔒 {itemName(byId[id])} ✕</button>)}
+          </div>
+        )}
+        {yLogs.length > 0 && (
+          <div className="small muted" style={{ marginTop: 12 }}>
+            Ieri: {yLogs.flatMap(l => l.items || []).map(id => itemName(byId[id])).filter(Boolean).join(', ')}
+          </div>
+        )}
+        {toWash > 0 && <div className="small" style={{ marginTop: 6, color: 'var(--warn)' }}>🧺 {toWash} capi da lavare (esclusi dalle proposte)</div>}
+        <button className="btn full" style={{ marginTop: 14 }} onClick={gen}>{res ? '🔄 Altre proposte' : '✨ Genera outfit'}</button>
+      </div>
+
+      {res && res.missing.length > 0 && (
+        <div className="card empty">
+          <div className="e">🤷‍♂️</div>
+          Non riesco a comporre un outfit: manca {res.missing.join(' e ')} disponibile per questo meteo.
+        </div>
+      )}
+
+      {res && res.outfits.map((o, idx) => (
+        <div className="outfit" key={idx}>
+          <div className="oh"><b>{idx === 0 ? '⭐ Proposta migliore' : `Proposta ${idx + 1}`}</b><span className="match">{matchPct(o.score)}%</span></div>
+          {outfitPieces(o).map(it => (
+            <div className="piece" key={it.id}>
+              <Thumb item={it} size={48} />
+              <div className="grow">
+                <div className="pn">{itemName(it)}</div>
+                <div className="pc">{catOf(it).label} · {colName(it.color)}</div>
+              </div>
+              <button className={'lock' + (locked.includes(it.id) ? ' on' : '')} onClick={() => toggleLock(it.id)} title="Blocca questo capo">
+                {locked.includes(it.id) ? '🔒' : '🔓'}
+              </button>
+            </div>
+          ))}
+          {(o.pros.length > 0 || o.cons.length > 0) && (
+            <div className="why">
+              {o.pros.map((p, i) => <div key={'p' + i} className="pro">✓ {p}</div>)}
+              {o.cons.map((p, i) => <div key={'c' + i} className="con">⚠︎ {p}</div>)}
+            </div>
+          )}
+          <div className="acts"><button className="btn ok" onClick={() => wear(o)}>👕 Indosso questo</button></div>
+        </div>
+      ))}
+
+      {picker && <ItemPicker items={items} title="Blocca un capo" selected={locked} onToggle={toggleLock} onClose={() => setPicker(false)} onlyAvailable />}
+    </>
+  );
+}
+
+/* ========================= ARMADIO ========================= */
+function WardrobeView({ store, onEdit }) {
+  const { items } = store;
+  const [q, setQ] = useState('');
+  const [cat, setCat] = useState('all');
+  const present = CATEGORIES.filter(c => items.some(i => i.category === c.id));
+  const list = items
+    .filter(i => (cat === 'all' || i.category === cat) && (!q || itemName(i).toLowerCase().includes(q.toLowerCase())))
+    .sort((a, b) => SLOT_ORDER.indexOf(catOf(a).slot) - SLOT_ORDER.indexOf(catOf(b).slot) || itemName(a).localeCompare(itemName(b)));
+
+  return (
+    <>
+      <div className="search"><span>🔍</span><input className="inp" value={q} onChange={e => setQ(e.target.value)} placeholder="Cerca nel tuo armadio…" /></div>
+      {present.length > 0 && (
+        <div className="chips" style={{ marginBottom: 12, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 4 }}>
+          <button className={'chip' + (cat === 'all' ? ' on' : '')} onClick={() => setCat('all')} style={{ flexShrink: 0 }}>Tutti ({items.length})</button>
+          {present.map(c => (
+            <button key={c.id} className={'chip' + (cat === c.id ? ' on' : '')} onClick={() => setCat(c.id)} style={{ flexShrink: 0 }}>
+              {c.label} ({items.filter(i => i.category === c.id).length})
+            </button>
+          ))}
+        </div>
+      )}
+      {!items.length && (
+        <div className="card empty"><div className="e">🧥</div><b>Nessun capo</b><p>Tocca <b>+</b> per aggiungere il primo. Con la foto ti suggerisco anche il colore.</p></div>
+      )}
+      <div className="grid">
+        {list.map(i => (
+          <button key={i.id} className={'tile' + (i.status !== 'disponibile' ? ' off' : '')} onClick={() => onEdit(i)}>
+            {i.photo ? <img className="ph" src={i.photo} alt="" /> :
+              <div className="ph swatch" style={{ background: COL[i.color] ? COL[i.color].hex : '#ddd' }}><span>{catOf(i).icon}</span></div>}
+            <div className="info">
+              <div className="nm">{itemName(i)}</div>
+              <div className="meta">
+                <StatusDot status={i.status} />
+                <span>{i.status === 'disponibile' ? (Number(i.maxWears) > 0 ? `${i.wears || 0}/${i.maxWears} usi` : 'Disponibile') : STATUS[i.status].label}</span>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ========================= LAVANDERIA ========================= */
+function LaundryView({ store, toast, onEdit }) {
+  const { items } = store;
+  const setStatus = (list, status) => {
+    store.saveItems(list.map(i => ({ ...i, status, wears: status === 'disponibile' ? 0 : i.wears, reason: status === 'disponibile' ? '' : i.reason })));
+  };
+  const sections = [
+    { st: 'lavare', title: '🧺 Da lavare', empty: 'Niente da lavare 🎉' },
+    { st: 'lavanderia', title: '🌀 In lavatrice / lavanderia', empty: 'Niente in lavaggio' },
+    { st: 'nondisp', title: '⏸️ Non disponibili', empty: 'Tutto disponibile' },
+  ];
+  return (
+    <>
+      {sections.map(sec => {
+        const l = items.filter(i => i.status === sec.st);
+        return (
+          <div className="card" key={sec.st}>
+            <div className="row between">
+              <h2 style={{ margin: 0 }}>{sec.title} <span className="muted small">({l.length})</span></h2>
+              {l.length > 1 && sec.st === 'lavare' && <button className="btn sec sm" onClick={() => { setStatus(l, 'lavanderia'); toast('Tutto in lavatrice'); }}>Tutto in lavatrice</button>}
+              {l.length > 1 && sec.st === 'lavanderia' && <button className="btn ok sm" onClick={() => { setStatus(l, 'disponibile'); toast('Tutto pulito ✨'); }}>Tutto pulito</button>}
+            </div>
+            {!l.length && <div className="small muted" style={{ marginTop: 8 }}>{sec.empty}</div>}
+            {l.map(i => (
+              <div className="list-item" key={i.id}>
+                <div onClick={() => onEdit(i)} style={{ cursor: 'pointer' }}><Thumb item={i} size={46} /></div>
+                <div className="grow" onClick={() => onEdit(i)} style={{ cursor: 'pointer' }}>
+                  <div style={{ fontWeight: 600 }}>{itemName(i)}</div>
+                  <div className="small muted">{sec.st === 'nondisp' ? (i.reason || 'Motivo non indicato') : `${i.wears || 0} usi`}</div>
+                </div>
+                {sec.st === 'lavare' && <button className="btn sec sm" onClick={() => setStatus([i], 'lavanderia')}>In lavatrice</button>}
+                {sec.st !== 'nondisp' && <button className="btn ok sm" onClick={() => { setStatus([i], 'disponibile'); toast(`${itemName(i)}: pulito`); }}>Pulito</button>}
+                {sec.st === 'nondisp' && <button className="btn ok sm" onClick={() => setStatus([i], 'disponibile')}>Disponibile</button>}
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+/* ========================= DIARIO ========================= */
+function LogEditor({ items, onSave, onClose }) {
+  const [date, setDate] = useState(todayStr());
+  const [occasion, setOccasion] = useState('casual');
+  const [sel, setSel] = useState([]);
+  const [picker, setPicker] = useState(false);
+  const byId = Object.fromEntries(items.map(i => [i.id, i]));
+  return (
+    <Modal title="Registra un outfit" onClose={onClose}
+      footer={<button className="btn" disabled={!sel.length} onClick={() => onSave({ date, items: sel, occasion })}>Salva</button>}>
+      <label className="f">Data</label>
+      <input className="inp" type="date" value={date} max={todayStr()} onChange={e => setDate(e.target.value)} />
+      <label className="f">Occasione</label>
+      <Chips options={Object.entries(OCCASIONS).map(([id, o]) => ({ id, label: o.label }))} value={occasion} onChange={setOccasion} />
+      <label className="f">Capi indossati</label>
+      {sel.map(id => byId[id] && (
+        <div className="list-item" key={id}>
+          <Thumb item={byId[id]} size={40} /><div className="grow">{itemName(byId[id])}</div>
+          <button className="icon-btn" onClick={() => setSel(sel.filter(x => x !== id))}>✕</button>
+        </div>
+      ))}
+      <button className="btn sec full" style={{ marginTop: 8 }} onClick={() => setPicker(true)}>+ Aggiungi capi</button>
+      {picker && <ItemPicker items={items} title="Cosa hai indossato?" selected={sel}
+        onToggle={id => setSel(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])} onClose={() => setPicker(false)} />}
+    </Modal>
+  );
+}
+function DiaryView({ store, toast }) {
+  const { items, logs } = store;
+  const [editor, setEditor] = useState(false);
+  const byId = useMemo(() => Object.fromEntries(items.map(i => [i.id, i])), [items]);
+  const today = todayStr();
+  const sorted = [...logs].sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0));
+
+  const counts = {};
+  for (const l of logs) if (daysBetween(l.date, today) <= 30) for (const id of (l.items || [])) counts[id] = (counts[id] || 0) + 1;
+  const top = Object.entries(counts).filter(([id]) => byId[id]).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const maxC = top.length ? top[0][1] : 1;
+  const last = computeLastWorn(logs);
+  const forgotten = items.filter(i => !['belt'].includes(catOf(i).slot) && i.status === 'disponibile' &&
+    (!last[i.id] || daysBetween(last[i.id], today) > 30)).slice(0, 10);
+
+  return (
+    <>
+      <button className="btn full" style={{ marginBottom: 12 }} onClick={() => setEditor(true)}>+ Registra outfit a mano</button>
+      {top.length > 0 && (
+        <div className="card">
+          <h3>Più indossati (30 giorni)</h3>
+          {top.map(([id, n]) => (
+            <div className="stat" key={id}>
+              <Thumb item={byId[id]} size={34} />
+              <div className="grow"><div className="small" style={{ fontWeight: 600 }}>{itemName(byId[id])}</div>
+                <div className="bar" style={{ width: `${(n / maxC) * 100}%` }}></div></div>
+              <b className="small">{n}×</b>
+            </div>
+          ))}
+        </div>
+      )}
+      {forgotten.length > 0 && logs.length > 0 && (
+        <div className="card">
+          <h3>Dimenticati nell'armadio</h3>
+          <div className="small muted" style={{ marginBottom: 8 }}>Non li metti da più di 30 giorni (o mai registrati)</div>
+          <div className="strip">{forgotten.map(i => <div key={i.id} title={itemName(i)}><Thumb item={i} size={50} /></div>)}</div>
+        </div>
+      )}
+      {!sorted.length && <div className="card empty"><div className="e">📔</div>Ancora nessun outfit registrato. Quando scegli "Indosso questo" lo trovi qui.</div>}
+      {sorted.map(l => (
+        <div className="card" key={l.id}>
+          <div className="row between">
+            <div><b style={{ textTransform: 'capitalize' }}>{fmtDate(l.date)}</b>
+              {l.occasion && OCCASIONS[l.occasion] && <span className="small muted"> · {OCCASIONS[l.occasion].label}</span>}</div>
+            <button className="icon-btn" onClick={() => { if (confirm('Eliminare questo outfit dal diario? Gli usi dei capi verranno scalati.')) { store.deleteLog(l); toast('Eliminato'); } }}>🗑️</button>
+          </div>
+          <div className="strip" style={{ marginTop: 8 }}>{(l.items || []).map(id => byId[id] && <Thumb key={id} item={byId[id]} size={46} />)}</div>
+          <div className="small muted" style={{ marginTop: 6 }}>{(l.items || []).map(id => itemName(byId[id]) || 'capo eliminato').join(' · ')}</div>
+        </div>
+      ))}
+      {editor && <LogEditor items={items} onClose={() => setEditor(false)}
+        onSave={(log) => { const moved = store.addLog(log); setEditor(false); toast(moved.length ? `Salvato. Da lavare: ${moved.map(itemName).join(', ')}` : 'Outfit salvato'); }} />}
+    </>
+  );
+}
+
+/* ========================= IMPOSTAZIONI ========================= */
+function SettingsView({ store, user, toast }) {
+  const fileRef = useRef();
+  const exportData = () => {
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), items: store.items, logs: store.logs }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `guardaroba-backup-${todayStr()}.json`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  const importFile = (e) => {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try { const data = JSON.parse(fr.result); if (!confirm(`Importare ${(data.items || []).length} capi e ${(data.logs || []).length} outfit? I capi con lo stesso ID verranno sovrascritti.`)) return; store.importData(data); toast('Import completato'); }
+      catch (err) { alert('File non valido'); }
+    };
+    fr.readAsText(file); e.target.value = '';
+  };
+  const rules = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /guardaroba/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}`;
+  return (
+    <>
+      <div className="card">
+        <h3>Account</h3>
+        {FB_ENABLED ? (
+          <div className="row between">
+            <div className="grow"><div style={{ fontWeight: 600 }}>{user && (user.displayName || user.email)}</div><div className="small muted">Sincronizzato con Firebase</div></div>
+            <button className="btn ghost sm" onClick={() => auth.signOut()}>Esci</button>
+          </div>
+        ) : (
+          <div className="banner" style={{ margin: 0 }}>Modalità locale: i dati restano solo su questo dispositivo. Inserisci la configurazione Firebase in cima a index.html per sincronizzare tra telefono e PC.</div>
+        )}
+      </div>
+      <div className="card">
+        <h3>Riepilogo</h3>
+        <div className="small">👔 {store.items.length} capi · ✅ {store.items.filter(i => i.status === 'disponibile').length} disponibili · 📔 {store.logs.length} outfit registrati</div>
+      </div>
+      <div className="card">
+        <h3>Backup</h3>
+        <div className="row wrap" style={{ gap: 8 }}>
+          <button className="btn sec" onClick={exportData}>⬇️ Esporta JSON</button>
+          <button className="btn sec" onClick={() => fileRef.current.click()}>⬆️ Importa JSON</button>
+          <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={importFile} />
+        </div>
+      </div>
+      {FB_ENABLED && (
+        <div className="card">
+          <h3>Regole Firestore</h3>
+          <div className="small muted" style={{ marginBottom: 8 }}>I dati stanno in <code>guardaroba/{'{uid}'}</code>. Regole consigliate:</div>
+          <pre className="code">{rules}</pre>
+        </div>
+      )}
+      <div className="card small muted">
+        <b>Come funzionano le proposte</b><br />
+        Usa solo i capi <i>disponibili</i> e adatti al meteo. Premia gli abbinamenti di colore classici, il livello di eleganza giusto per l'occasione e i capi che non metti da tempo; penalizza quelli messi ieri o l'altro ieri, le combinazioni ripetute nelle ultime 2 settimane, due fantasie insieme, camicia sotto collo alto e cintura di colore diverso dalle scarpe. Quando un capo raggiunge gli usi impostati passa da solo in "Da lavare".
+      </div>
+    </>
+  );
+}
+
+/* ========================= APP ========================= */
+function LoginScreen() {
+  const [err, setErr] = useState('');
+  const login = () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(e => {
+      if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(e.code)) auth.signInWithRedirect(provider);
+      else if (e.code !== 'auth/popup-closed-by-user') setErr(e.message);
+    });
+  };
+  return (
+    <div className="login">
+      <div style={{ fontSize: 56 }}>👔</div>
+      <h1>Guardaroba</h1>
+      <div style={{ opacity: .8 }}>Il tuo armadio e i tuoi outfit, sempre con te</div>
+      <button className="btn" onClick={login}>Accedi con Google</button>
+      {err && <div className="small" style={{ marginTop: 14, color: '#ffd2cc' }}>{err}</div>}
+    </div>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(!FB_ENABLED);
+  const [tab, setTab] = useState('oggi');
+  const [editing, setEditing] = useState(null);
+  const [toastMsg, setToastMsg] = useState('');
+  const toastTimer = useRef();
+
+  useEffect(() => {
+    if (!FB_ENABLED) return;
+    auth.getRedirectResult().catch(() => {});
+    return auth.onAuthStateChanged(u => { setUser(u); setAuthReady(true); });
+  }, []);
+
+  const store = useStore(user);
+  const toast = (m) => { setToastMsg(m); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToastMsg(''), 3200); };
+
+  if (!authReady) return <div className="login"><div style={{ fontSize: 40 }}>👔</div><div>Caricamento…</div></div>;
+  if (FB_ENABLED && !user) return <LoginScreen />;
+
+  const washCount = store.items.filter(i => i.status === 'lavare').length;
+  const TABS = [
+    { id: 'oggi', ic: '✨', label: 'Oggi' },
+    { id: 'armadio', ic: '👔', label: 'Armadio' },
+    { id: 'lavanderia', ic: '🧺', label: 'Lavanderia', badge: washCount },
+    { id: 'diario', ic: '📔', label: 'Diario' },
+    { id: 'impostazioni', ic: '⚙️', label: 'Altro' },
+  ];
+  const titles = { oggi: 'Cosa mi metto oggi?', armadio: 'Il mio armadio', lavanderia: 'Lavanderia', diario: 'Diario outfit', impostazioni: 'Impostazioni' };
+
+  return (
+    <div className="app">
+      <header className="top">
+        <div>
+          <h1>{titles[tab]}</h1>
+          <div className="sub" style={{ textTransform: 'capitalize' }}>{fmtDate(todayStr())}{!FB_ENABLED ? ' · modalità locale' : ''}</div>
+        </div>
+      </header>
+      <main>
+        {!store.ready ? <div className="empty">Caricamento armadio…</div> : <>
+          {tab === 'oggi' && <TodayView store={store} toast={toast} goWardrobe={() => setTab('armadio')} />}
+          {tab === 'armadio' && <WardrobeView store={store} onEdit={i => setEditing(i)} />}
+          {tab === 'lavanderia' && <LaundryView store={store} toast={toast} onEdit={i => setEditing(i)} />}
+          {tab === 'diario' && <DiaryView store={store} toast={toast} />}
+          {tab === 'impostazioni' && <SettingsView store={store} user={user} toast={toast} />}
+        </>}
+      </main>
+
+      {tab === 'armadio' && <button className="fab" onClick={() => setEditing(defaultItem())}>+</button>}
+
+      <nav className="tabs"><div className="in">
+        {TABS.map(t => (
+          <button key={t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
+            <span className="ic">{t.ic}</span>{t.label}
+            {t.badge > 0 && <span className="badge">{t.badge}</span>}
+          </button>
+        ))}
+      </div></nav>
+
+      {editing && <ItemEditor item={{ ...defaultItem(editing.category || 'camicia'), ...editing }}
+        onClose={() => setEditing(null)}
+        onSave={(it) => { store.saveItem(it); setEditing(null); toast(editing.id ? 'Capo aggiornato' : 'Capo aggiunto all\'armadio'); }}
+        onDelete={(id) => { store.deleteItem(id); setEditing(null); toast('Capo eliminato'); }} />}
+
+      {toastMsg && <div className="toast">{toastMsg}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
