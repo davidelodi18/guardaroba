@@ -7,9 +7,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Guardaroba</title>
+<meta name="apple-mobile-web-app-title" content="Guardaroba">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600&display=swap">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -638,6 +642,20 @@ function StatusDot({ status }) {
   return <span className="dot" style={{ background: s.color }} title={s.label}></span>;
 }
 
+function Logo({ size = 64, bg = '#1f2a44', fg = '#f5f3ee', btn = '#b8913a', rounded = true }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 200 200" role="img" aria-label="Guardaroba">
+      <rect x="0" y="0" width="200" height="200" rx={rounded ? 46 : 0} fill={bg} />
+      <path d="M60 62 Q100 42 140 62" fill="none" stroke={fg} strokeWidth="9" strokeLinecap="round" />
+      <path d="M100 76 L58 60 L70 122 Z" fill={fg} stroke={fg} strokeWidth="6" strokeLinejoin="round" />
+      <path d="M100 76 L142 60 L130 122 Z" fill={fg} stroke={fg} strokeWidth="6" strokeLinejoin="round" />
+      <path d="M100 96 L100 172" stroke={fg} strokeWidth="6" strokeLinecap="round" />
+      <circle cx="100" cy="134" r="6" fill={btn} />
+      <circle cx="100" cy="158" r="6" fill={btn} />
+    </svg>
+  );
+}
+
 /* ========================= EDITOR CAPO ========================= */
 function ItemEditor({ item, onSave, onDelete, onClose }) {
   const isNew = !item.id;
@@ -1163,8 +1181,8 @@ function LoginScreen() {
   };
   return (
     <div className="login">
-      <div style={{ fontSize: 56 }}>👔</div>
-      <h1>Guardaroba</h1>
+      <Logo size={96} bg="#f5f3ee" fg="#1f2a44" />
+      <h1 style={{ fontFamily: '"Space Grotesk", -apple-system, sans-serif', letterSpacing: '-0.5px' }}>guardaroba</h1>
       <div style={{ opacity: .8 }}>Il tuo armadio e i tuoi outfit, sempre con te</div>
       <button className="btn" onClick={login}>Accedi con Google</button>
       {err && <div className="small" style={{ marginTop: 14, color: '#ffd2cc', maxWidth: 320 }}>{err}</div>}
@@ -1190,7 +1208,7 @@ function App() {
   const store = useStore(user);
   const toast = (m) => { setToastMsg(m); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToastMsg(''), 3200); };
 
-  if (!authReady) return <div className="login"><div style={{ fontSize: 40 }}>👔</div><div>Caricamento…</div></div>;
+  if (!authReady) return <div className="login"><Logo size={64} bg="#f5f3ee" fg="#1f2a44" /><div style={{ marginTop: 12 }}>Caricamento…</div></div>;
   if (FB_ENABLED && !user) return <LoginScreen />;
 
   const washCount = store.items.filter(i => i.status === 'lavare').length;
@@ -1206,9 +1224,12 @@ function App() {
   return (
     <div className="app">
       <header className="top">
+        <div className="row" style={{ gap: 12 }}>
+        <Logo size={38} bg="#f5f3ee" fg="#1f2a44" />
         <div>
           <h1>{titles[tab]}</h1>
           <div className="sub" style={{ textTransform: 'capitalize' }}>{fmtDate(todayStr())}{!FB_ENABLED ? ' · modalità locale' : ''}</div>
+        </div>
         </div>
       </header>
       <main>
