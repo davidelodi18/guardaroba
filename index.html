@@ -1149,10 +1149,16 @@ service cloud.firestore {
 function LoginScreen() {
   const [err, setErr] = useState('');
   const login = () => {
+    setErr('');
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    // Solo popup: il redirect su iPhone (Safari/app) fallisce per il partizionamento dello storage
     auth.signInWithPopup(provider).catch(e => {
-      if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(e.code)) auth.signInWithRedirect(provider);
-      else if (e.code !== 'auth/popup-closed-by-user') setErr(e.message);
+      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+      if (e.code === 'auth/popup-blocked') setErr('Il browser ha bloccato la finestra di accesso. Consenti i popup per questo sito e riprova.');
+      else if (e.code === 'auth/operation-not-supported-in-this-environment' || e.code === 'auth/web-storage-unsupported')
+        setErr('Questo browser interno non supporta l\'accesso Google. Apri il link in Safari o Chrome.');
+      else setErr(e.message);
     });
   };
   return (
@@ -1161,7 +1167,8 @@ function LoginScreen() {
       <h1>Guardaroba</h1>
       <div style={{ opacity: .8 }}>Il tuo armadio e i tuoi outfit, sempre con te</div>
       <button className="btn" onClick={login}>Accedi con Google</button>
-      {err && <div className="small" style={{ marginTop: 14, color: '#ffd2cc' }}>{err}</div>}
+      {err && <div className="small" style={{ marginTop: 14, color: '#ffd2cc', maxWidth: 320 }}>{err}</div>}
+      <div className="small" style={{ marginTop: 22, opacity: .6, maxWidth: 300 }}>Se hai aperto il link da un'altra app, usa "Apri in Safari" prima di accedere.</div>
     </div>
   );
 }
